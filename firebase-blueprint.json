@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "CloudConversation": {
+      "title": "CloudConversation",
+      "description": "A user-owned AI assistant conversation synced to Firestore.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Short display title of the conversation (1-120 chars)."
+        },
+        "languageCode": {
+          "type": "string",
+          "enum": ["en", "bn", "hi"],
+          "description": "Active assistant language code."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["title", "languageCode", "createdAt", "updatedAt"]
+    },
+    "CloudMessage": {
+      "title": "CloudMessage",
+      "description": "An immutable user or Gemini model turn inside a conversation.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"],
+          "description": "Turn author role."
+        },
+        "content": {
+          "type": "string",
+          "description": "Message text body (1-16000 chars)."
+        },
+        "modelUsed": {
+          "type": "string",
+          "description": "Optional Gemini model or router label."
+        },
+        "verifiedDeviceData": {
+          "type": "boolean",
+          "description": "True if verified from device hardware/API rather than generated text."
+        },
+        "actionSummary": {
+          "type": "string",
+          "description": "Optional device action result summary."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["role", "content", "verifiedDeviceData", "createdAt"]
+    },
+    "CloudReminder": {
+      "title": "CloudReminder",
+      "description": "A user-owned reminder synced to Cloud Firestore.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Reminder title (1-200 chars)."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes (0-1000 chars)."
+        },
+        "triggerAtMillis": {
+          "type": "integer",
+          "description": "Epoch milliseconds for reminder trigger."
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Completion state."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["title", "notes", "triggerAtMillis", "completed", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/CloudConversation" },
+      "description": "User-owned conversation metadata documents."
+    },
+    "/users/{userId}/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/CloudMessage" },
+      "description": "User-owned conversation message turns."
+    },
+    "/users/{userId}/reminders/{reminderId}": {
+      "schema": { "$ref": "#/entities/CloudReminder" },
+      "description": "User-owned synced reminders."
+    }
+  }
+}

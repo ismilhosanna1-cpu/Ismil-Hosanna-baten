@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: deny everything unless explicitly allowed below
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidConversation(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.languageCode is string && data.languageCode in ['en', 'bn', 'hi'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidMessage(data) {
+      return data.role is string && data.role in ['user', 'model'] &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 16000 &&
+             data.verifiedDeviceData is bool &&
+             (!('modelUsed' in data) || (data.modelUsed is string && data.modelUsed.size() <= 80)) &&
+             (!('actionSummary' in data) || (data.actionSummary is string && data.actionSummary.size() <= 300)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidReminder(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.notes is string && data.notes.size() <= 1000 &&
+             data.triggerAtMillis is int && data.triggerAtMillis > 0 &&
+             data.completed is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/conversations/{conversationId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(conversationId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(conversationId) &&
+                       incoming().keys().hasAll(['title', 'languageCode', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['title', 'languageCode', 'createdAt', 'updatedAt']) &&
+                       isValidConversation(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(conversationId) &&
+                       isValidConversation(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['languageCode', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['updatedAt'])
+                       );
+
+      match /messages/{messageId} {
+        allow list: if isOwner(userId) && isValidId(conversationId);
+        allow get, delete: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(conversationId) &&
+                         isValidId(messageId) &&
+                         exists(/databases/$(database)/documents/users/$(userId)/conversations/$(conversationId)) &&
+                         incoming().keys().hasAll(['role', 'content', 'verifiedDeviceData', 'createdAt']) &&
+                         incoming().keys().hasOnly(['role', 'content', 'modelUsed', 'verifiedDeviceData', 'actionSummary', 'createdAt']) &&
+                         isValidMessage(incoming());
+
+        allow update: if false;
+      }
+    }
+
+    match /users/{userId}/reminders/{reminderId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(reminderId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(reminderId) &&
+                       incoming().keys().hasAll(['title', 'notes', 'triggerAtMillis', 'completed', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['title', 'notes', 'triggerAtMillis', 'completed', 'createdAt', 'updatedAt']) &&
+                       isValidReminder(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(reminderId) &&
+                       isValidReminder(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'notes', 'triggerAtMillis', 'updatedAt'])
+                       );
+    }
+  }
+}

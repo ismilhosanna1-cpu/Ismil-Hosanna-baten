@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">YESMIN AI</string>
+    <string name="accessibility_service_description">Allows YESMIN AI to assist with voice-triggered global navigation actions such as Home, Back, Recents, and opening Notifications when explicitly enabled by the user.</string>
+    <string name="notification_listener_label">YESMIN AI Notification Reader</string>
+    <string name="widget_description">Always-ready YESMIN AI voice and chat bar for your Android Home Screen.</string>
+    <string name="widget_status_ready">Tap mic to speak</string>
+    <string name="widget_status_always_on">Always-On • Listening</string>
+    <string name="widget_wake_off">24/7</string>
+    <string name="widget_wake_on">ON</string>
+    <string name="widget_mic_cd">Speak to YESMIN AI</string>
+    <string name="widget_chat_cd">Open YESMIN AI Chat</string>
+    <string name="quick_tile_label">YESMIN AI</string>
+</resources>

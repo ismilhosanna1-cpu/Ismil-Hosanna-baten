@@ -1,0 +1,6 @@
+{
+  "name": "YESMIN AI",
+  "description": "Futuristic multilingual AI voice assistant, Gemini companion, and smart Android phone controller.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
